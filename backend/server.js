@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 
 const { initSchema } = require('./db');
+const { seedIfEmpty } = require('./seed');
 const authRoutes = require('./routes/auth');
 const postsRoutes = require('./routes/posts');
 const usersRoutes = require('./routes/users');
@@ -55,6 +56,7 @@ async function connectWithRetry(retries = 8, delayMs = 3000) {
 }
 
 connectWithRetry()
+  .then(() => seedIfEmpty())
   .then(() => {
     app.listen(PORT, () => {
       console.log(`CampusLink server running on port ${PORT}`);
