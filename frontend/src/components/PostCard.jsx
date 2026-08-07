@@ -75,7 +75,16 @@ export default function PostCard({ post, onChange }) {
               </button>
             )}
           </div>
-          <p style={{ margin: '6px 0 10px', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{post.content}</p>
+          {post.content && (
+            <p style={{ margin: '6px 0 10px', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{post.content}</p>
+          )}
+          {post.image && (
+            <img
+              src={post.image}
+              alt=""
+              style={{ maxWidth: '100%', maxHeight: 420, borderRadius: 12, margin: '4px 0 10px', display: 'block' }}
+            />
+          )}
 
           <div style={{ display: 'flex', gap: 22 }}>
             <button

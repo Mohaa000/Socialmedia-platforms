@@ -4,6 +4,21 @@ const { requireAuth, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
+// GET /api/users/suggestions - a few accounts the viewer doesn't already follow
+router.get('/suggestions', requireAuth, async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 5, 20);
+  const { rows } = await pool.query(
+    `SELECT id, username, display_name, bio, avatar_color
+     FROM users
+     WHERE id != $1
+       AND id NOT IN (SELECT following_id FROM follows WHERE follower_id = $1)
+     ORDER BY RANDOM()
+     LIMIT $2`,
+    [req.userId, limit]
+  );
+  res.json({ users: rows });
+});
+
 // GET /api/users/:username - public profile
 router.get('/:username', optionalAuth, async (req, res) => {
   const { rows: userRows } = await pool.query(
@@ -27,6 +42,7 @@ router.get('/:username', optionalAuth, async (req, res) => {
       return {
         id: row.id,
         content: row.content,
+        image: row.image_data,
         createdAt: row.created_at,
         likeCount: parseInt(likeCount.rows[0].c, 10),
         commentCount: parseInt(commentCount.rows[0].c, 10),

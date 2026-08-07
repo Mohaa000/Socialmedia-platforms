@@ -116,7 +116,14 @@ export default function Profile() {
 
       {posts.map((post) => (
         <article key={post.id} style={{ padding: '14px 24px', borderBottom: '1px solid var(--line)' }}>
-          <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{post.content}</p>
+          {post.content && <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{post.content}</p>}
+          {post.image && (
+            <img
+              src={post.image}
+              alt=""
+              style={{ maxWidth: '100%', maxHeight: 380, borderRadius: 12, marginTop: 8, display: 'block' }}
+            />
+          )}
           <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 13, color: 'var(--text-dim)' }}>
             <span>♡ {post.likeCount}</span>
             <span>💬 {post.commentCount}</span>

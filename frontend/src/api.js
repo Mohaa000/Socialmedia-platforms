@@ -20,13 +20,32 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
   return data;
 }
 
+async function requestForm(path, formData) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body: formData });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Something went wrong');
+  return data;
+}
+
 export const api = {
   register: (payload) => request('/auth/register', { method: 'POST', body: payload, auth: false }),
   login: (payload) => request('/auth/login', { method: 'POST', body: payload, auth: false }),
   me: () => request('/auth/me'),
 
-  feed: () => request('/posts', { auth: !!getToken() }),
-  createPost: (content) => request('/posts', { method: 'POST', body: { content } }),
+  feed: (scope) => request(`/posts${scope ? `?scope=${scope}` : ''}`, { auth: !!getToken() }),
+  createPost: (content, imageFile) => {
+    if (imageFile) {
+      const form = new FormData();
+      if (content) form.append('content', content);
+      form.append('image', imageFile);
+      return requestForm('/posts', form);
+    }
+    return request('/posts', { method: 'POST', body: { content } });
+  },
   deletePost: (id) => request(`/posts/${id}`, { method: 'DELETE' }),
   like: (id) => request(`/posts/${id}/like`, { method: 'POST' }),
   unlike: (id) => request(`/posts/${id}/like`, { method: 'DELETE' }),
@@ -37,6 +56,7 @@ export const api = {
   updateProfile: (payload) => request('/users/me', { method: 'PUT', body: payload }),
   follow: (username) => request(`/users/${username}/follow`, { method: 'POST' }),
   unfollow: (username) => request(`/users/${username}/follow`, { method: 'DELETE' }),
+  suggestions: () => request('/users/suggestions'),
 };
 
 export { getToken };

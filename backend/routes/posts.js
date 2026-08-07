@@ -1,8 +1,17 @@
 const express = require('express');
+const multer = require('multer');
 const { pool } = require('../db');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter(req, file, cb) {
+    cb(null, file.mimetype.startsWith('image/'));
+  },
+});
 
 async function serializePost(row, viewerId) {
   const likeCount = await pool.query('SELECT COUNT(*) c FROM likes WHERE post_id = $1', [row.id]);
@@ -14,6 +23,7 @@ async function serializePost(row, viewerId) {
   return {
     id: row.id,
     content: row.content,
+    image: row.image_data,
     createdAt: row.created_at,
     author: {
       id: row.user_id,
@@ -27,31 +37,44 @@ async function serializePost(row, viewerId) {
   };
 }
 
-// GET /api/posts - global feed, newest first
+// GET /api/posts - feed, newest first. ?scope=following restricts to people the viewer follows (plus their own posts).
 router.get('/', optionalAuth, async (req, res) => {
-  const { rows } = await pool.query(`
-    SELECT posts.*, users.username, users.display_name, users.avatar_color
-    FROM posts JOIN users ON users.id = posts.user_id
-    ORDER BY posts.created_at DESC, posts.id DESC
-    LIMIT 100
-  `);
+  const followingOnly = req.query.scope === 'following' && req.userId;
+  const { rows } = followingOnly
+    ? await pool.query(
+        `SELECT posts.*, users.username, users.display_name, users.avatar_color
+         FROM posts JOIN users ON users.id = posts.user_id
+         WHERE posts.user_id = $1 OR posts.user_id IN (SELECT following_id FROM follows WHERE follower_id = $1)
+         ORDER BY posts.created_at DESC, posts.id DESC
+         LIMIT 100`,
+        [req.userId]
+      )
+    : await pool.query(`
+        SELECT posts.*, users.username, users.display_name, users.avatar_color
+        FROM posts JOIN users ON users.id = posts.user_id
+        ORDER BY posts.created_at DESC, posts.id DESC
+        LIMIT 100
+      `);
   const posts = await Promise.all(rows.map((r) => serializePost(r, req.userId)));
   res.json({ posts });
 });
 
-// POST /api/posts - create a post
-router.post('/', requireAuth, async (req, res) => {
-  const { content } = req.body;
-  if (!content || !content.trim()) {
-    return res.status(400).json({ error: 'Post content cannot be empty' });
+// POST /api/posts - create a post (multipart form with optional "image" file, or JSON with just content)
+router.post('/', requireAuth, upload.single('image'), async (req, res) => {
+  const content = (req.body.content || '').trim();
+  if (!content && !req.file) {
+    return res.status(400).json({ error: 'Post must have text or an image' });
   }
   if (content.length > 500) {
     return res.status(400).json({ error: 'Post content must be 500 characters or fewer' });
   }
 
-  const inserted = await pool.query('INSERT INTO posts (user_id, content) VALUES ($1, $2) RETURNING id', [
+  const imageData = req.file ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}` : null;
+
+  const inserted = await pool.query('INSERT INTO posts (user_id, content, image_data) VALUES ($1, $2, $3) RETURNING id', [
     req.userId,
-    content.trim(),
+    content,
+    imageData,
   ]);
   const { rows } = await pool.query(
     `SELECT posts.*, users.username, users.display_name, users.avatar_color

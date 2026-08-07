@@ -1,15 +1,21 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { useAuth } from '../AuthContext';
 import Composer from '../components/Composer';
 import PostCard from '../components/PostCard';
+import WhoToFollow from '../components/WhoToFollow';
 
 export default function Feed() {
+  const { user } = useAuth();
+  const [scope, setScope] = useState('all');
   const [posts, setPosts] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.feed().then((data) => setPosts(data.posts)).catch((err) => setError(err.message));
-  }, []);
+    setPosts(null);
+    setError('');
+    api.feed(scope).then((data) => setPosts(data.posts)).catch((err) => setError(err.message));
+  }, [scope]);
 
   function handleChange(updated) {
     if (!updated) return; // deletion refresh happens via filter below (we don't know id here)
@@ -30,6 +36,19 @@ export default function Feed() {
       </div>
       <Composer onPosted={handlePosted} />
 
+      {user && <WhoToFollow />}
+
+      {user && (
+        <div className="feed-tabs">
+          <button className={`feed-tab ${scope === 'all' ? 'active' : ''}`} onClick={() => setScope('all')}>
+            For You
+          </button>
+          <button className={`feed-tab ${scope === 'following' ? 'active' : ''}`} onClick={() => setScope('following')}>
+            Following
+          </button>
+        </div>
+      )}
+
       {error && <p style={{ padding: 20, color: 'var(--danger)' }}>{error}</p>}
       {!posts && !error && (
         <div>
@@ -48,7 +67,7 @@ export default function Feed() {
       {posts && posts.length === 0 && (
         <div className="empty-state">
           <div className="glyph">✎</div>
-          <p>No posts yet — be the first to share something.</p>
+          <p>{scope === 'following' ? "No posts from people you follow yet." : 'No posts yet — be the first to share something.'}</p>
         </div>
       )}
       {posts && posts.map((post) => (
