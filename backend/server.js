@@ -36,7 +36,22 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-initSchema()
+// The database may still be provisioning when this service first boots,
+// so retry with backoff instead of crashing on the first failed connection.
+async function connectWithRetry(retries = 8, delayMs = 3000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await initSchema();
+      return;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      console.error(`Database not ready (attempt ${attempt}/${retries}), retrying in ${delayMs}ms...`, err.message);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
+connectWithRetry()
   .then(() => {
     app.listen(PORT, () => {
       console.log(`CampusLink server running on port ${PORT}`);
