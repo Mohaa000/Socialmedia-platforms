@@ -6,12 +6,6 @@ build/
 *.log
 npm-debug.log*
 
-# SQLite database
-backend/*.db
-backend/*.db-journal
-backend/*.db-wal
-backend/*.db-shm
-
 # OS/editor
 .DS_Store
 Thumbs.db

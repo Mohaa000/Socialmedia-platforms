@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+const { initSchema } = require('./db');
 const authRoutes = require('./routes/auth');
 const postsRoutes = require('./routes/posts');
 const usersRoutes = require('./routes/users');
@@ -35,6 +36,13 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`CampusLink server running on port ${PORT}`);
-});
+initSchema()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`CampusLink server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to initialize database schema', err);
+    process.exit(1);
+  });

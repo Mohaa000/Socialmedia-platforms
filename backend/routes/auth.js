@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../db');
+const { pool } = require('../db');
 const { JWT_SECRET, requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -9,7 +9,7 @@ const router = express.Router();
 const AVATAR_COLORS = ['#5B4636', '#9C6644', '#7A9E7E', '#6B8CAE', '#B5654B', '#8B7355'];
 
 // POST /api/auth/register
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   const { username, email, password, displayName } = req.body;
 
   if (!username || !email || !password || !displayName) {
@@ -22,32 +22,36 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ error: 'Username must be 3-20 characters, letters/numbers/underscores only' });
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').get(username, email);
-  if (existing) {
+  const existing = await pool.query('SELECT id FROM users WHERE username = $1 OR email = $2', [username, email]);
+  if (existing.rows.length) {
     return res.status(409).json({ error: 'Username or email already in use' });
   }
 
   const passwordHash = bcrypt.hashSync(password, 10);
   const avatarColor = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
 
-  const result = db.prepare(
-    'INSERT INTO users (username, email, password_hash, display_name, avatar_color) VALUES (?, ?, ?, ?, ?)'
-  ).run(username, email, passwordHash, displayName, avatarColor);
+  const inserted = await pool.query(
+    `INSERT INTO users (username, email, password_hash, display_name, avatar_color)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, username, email, display_name, bio, avatar_color, created_at`,
+    [username, email, passwordHash, displayName, avatarColor]
+  );
 
-  const user = db.prepare('SELECT id, username, email, display_name, bio, avatar_color, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
+  const user = inserted.rows[0];
   const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
 
   res.status(201).json({ token, user });
 });
 
 // POST /api/auth/login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'username and password are required' });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE username = ? OR email = ?').get(username, username);
+  const result = await pool.query('SELECT * FROM users WHERE username = $1 OR email = $1', [username]);
+  const user = result.rows[0];
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.status(401).json({ error: 'Invalid username or password' });
   }
@@ -58,8 +62,12 @@ router.post('/login', (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', requireAuth, (req, res) => {
-  const user = db.prepare('SELECT id, username, email, display_name, bio, avatar_color, created_at FROM users WHERE id = ?').get(req.userId);
+router.get('/me', requireAuth, async (req, res) => {
+  const result = await pool.query(
+    'SELECT id, username, email, display_name, bio, avatar_color, created_at FROM users WHERE id = $1',
+    [req.userId]
+  );
+  const user = result.rows[0];
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json({ user });
 });
