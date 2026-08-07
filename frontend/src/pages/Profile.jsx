@@ -41,7 +41,19 @@ export default function Profile() {
   }
 
   if (error) return <p style={{ padding: 20, color: 'var(--danger)' }}>{error}</p>;
-  if (!profile) return <p style={{ padding: 20, color: 'var(--text-dim)' }}>Loading profile…</p>;
+  if (!profile) {
+    return (
+      <div style={{ padding: 24 }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <div className="skeleton" style={{ width: 64, height: 64, borderRadius: '50%' }} />
+          <div>
+            <div className="skeleton" style={{ width: 140, height: 16, marginBottom: 8 }} />
+            <div className="skeleton" style={{ width: 90, height: 12 }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -111,7 +123,12 @@ export default function Profile() {
           </div>
         </article>
       ))}
-      {posts.length === 0 && <p style={{ padding: 24, color: 'var(--text-dim)' }}>No posts yet.</p>}
+      {posts.length === 0 && (
+        <div className="empty-state">
+          <div className="glyph">✎</div>
+          <p>No posts yet.</p>
+        </div>
+      )}
     </div>
   );
 }

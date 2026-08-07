@@ -49,19 +49,34 @@ export default function TopBar() {
           </button>
         </div>
       ) : (
-        <Link
-          to="/login"
-          style={{
-            background: 'var(--gold)',
-            color: 'var(--ink)',
-            fontWeight: 600,
-            borderRadius: 8,
-            padding: '8px 16px',
-            fontSize: 14,
-          }}
-        >
-          Log in
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link
+            to="/login"
+            style={{
+              color: '#fff',
+              fontWeight: 600,
+              borderRadius: 8,
+              padding: '8px 14px',
+              fontSize: 14,
+              border: '1px solid rgba(255,255,255,0.35)',
+            }}
+          >
+            Log in
+          </Link>
+          <Link
+            to="/register"
+            style={{
+              background: 'var(--gold)',
+              color: 'var(--ink)',
+              fontWeight: 600,
+              borderRadius: 8,
+              padding: '8px 16px',
+              fontSize: 14,
+            }}
+          >
+            Sign up
+          </Link>
+        </div>
       )}
     </header>
   );

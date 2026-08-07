@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
-import { inputStyle, buttonStyle } from './Login';
+import AuthLayout from '../components/AuthLayout';
 
 export default function Register() {
   const [form, setForm] = useState({ username: '', email: '', displayName: '', password: '' });
@@ -31,22 +31,25 @@ export default function Register() {
   }
 
   return (
-    <div style={{ padding: '48px 24px', maxWidth: 380, margin: '0 auto' }}>
-      <h1 className="display" style={{ fontSize: 30 }}>Join CampusLink</h1>
-      <p style={{ color: 'var(--text-dim)', marginTop: -8 }}>Connect with your USIU-Africa community.</p>
-      <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
-        <input placeholder="Display name" value={form.displayName} onChange={set('displayName')} required style={inputStyle} />
-        <input placeholder="Username" value={form.username} onChange={set('username')} required style={inputStyle} />
-        <input type="email" placeholder="Email" value={form.email} onChange={set('email')} required style={inputStyle} />
-        <input type="password" placeholder="Password (min 6 characters)" value={form.password} onChange={set('password')} required style={inputStyle} />
+    <AuthLayout
+      title="Join CampusLink"
+      tagline="Connect with your USIU-Africa community."
+      footer={
+        <p className="auth-footer-link">
+          Already have an account? <Link to="/login" style={{ color: 'var(--ink)', fontWeight: 600 }}>Log in</Link>
+        </p>
+      }
+    >
+      <form onSubmit={submit} className="auth-form">
+        <input placeholder="Display name" value={form.displayName} onChange={set('displayName')} required className="auth-input" />
+        <input placeholder="Username" value={form.username} onChange={set('username')} required className="auth-input" />
+        <input type="email" placeholder="Email" value={form.email} onChange={set('email')} required className="auth-input" />
+        <input type="password" placeholder="Password (min 6 characters)" value={form.password} onChange={set('password')} required className="auth-input" />
         {error && <p style={{ color: 'var(--danger)', fontSize: 13 }}>{error}</p>}
-        <button type="submit" disabled={busy} style={buttonStyle}>
+        <button type="submit" disabled={busy} className="auth-button">
           {busy ? 'Creating account…' : 'Create account'}
         </button>
       </form>
-      <p style={{ marginTop: 18, fontSize: 14 }}>
-        Already have an account? <Link to="/login" style={{ color: 'var(--ink)', fontWeight: 600 }}>Log in</Link>
-      </p>
-    </div>
+    </AuthLayout>
   );
 }

@@ -31,9 +31,25 @@ export default function Feed() {
       <Composer onPosted={handlePosted} />
 
       {error && <p style={{ padding: 20, color: 'var(--danger)' }}>{error}</p>}
-      {!posts && !error && <p style={{ padding: 20, color: 'var(--text-dim)' }}>Loading feed…</p>}
+      {!posts && !error && (
+        <div>
+          {[0, 1, 2].map((i) => (
+            <div className="skeleton-post" key={i}>
+              <div className="skeleton" style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div className="skeleton" style={{ width: '40%', height: 12, marginBottom: 10 }} />
+                <div className="skeleton" style={{ width: '90%', height: 12, marginBottom: 6 }} />
+                <div className="skeleton" style={{ width: '65%', height: 12 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {posts && posts.length === 0 && (
-        <p style={{ padding: 20, color: 'var(--text-dim)' }}>No posts yet — be the first to share something.</p>
+        <div className="empty-state">
+          <div className="glyph">✎</div>
+          <p>No posts yet — be the first to share something.</p>
+        </div>
       )}
       {posts && posts.map((post) => (
         <PostCard
