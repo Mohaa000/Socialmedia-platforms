@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import TopBar from './components/TopBar';
+import Sidebar from './components/Sidebar';
 import Landing from './pages/Landing';
 import Feed from './pages/Feed';
 import Login from './pages/Login';
@@ -18,15 +19,20 @@ function Shell() {
     );
   }
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${user ? 'has-sidebar' : ''}`}>
       <TopBar />
-      <Routes>
-        <Route path="/" element={user ? <Feed /> : <Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/u/:username" element={<Profile />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <div className="layout">
+        <Sidebar />
+        <main className="main-column">
+          <Routes>
+            <Route path="/" element={user ? <Feed /> : <Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/u/:username" element={<Profile />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 }
